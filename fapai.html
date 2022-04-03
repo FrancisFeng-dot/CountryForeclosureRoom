@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>全国法拍房图表-第一版</title>
+<!-- 	<script src="./jquery.min.js"></script> -->
+	<script src="echarts.js"></script>
+</head>
+<body>
+	<select id="province" style="width:120px;margin-bottom: 20px;" onchange="setCity(this.value)"></select>
+	<select id="city" style="width:120px;margin-bottom: 20px;" onchange="getPaimai()">
+		<option value=''>全市</option>
+	</select>
+<!-- 	<script src="./index.js"></script> -->
+	<div id="main" style="width:1200px;height:550px;"></div>
+    <script type="text/javascript">
+		// 基于准备好的dom，初始化echarts实例
+		let myChart = echarts.init(document.getElementById('main'));
+		// 指定图表的配置项和数据
+		let option = {
+		title: {
+		  text: '北京市法拍房数量变化展示图(只统计当月已结束)'
+		},
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow',
+          label: {
+            show: true
+          }
+        }
+      },
+      toolbox: {
+        show: true,
+        feature: {
+          mark: { show: true },
+          dataView: { show: true, readOnly: false },
+          magicType: { show: true, type: ['line', 'bar'] },
+          restore: { show: true },
+          saveAsImage: { show: true }
+        }
+      },
+      calculable: true,
+      legend: {
+        data: ['成交数', '流拍数'],
+        itemGap: 5
+      },
+      grid: {
+        top: '15%',
+        left: '4%',
+        right: '4%',
+        containLabel: true
+      },
+      xAxis: [
+        {
+          type: 'category',
+          data: ['2021-01','2021-02','2021-03','2021-04','2021-05','2021-06','2021-07','2021-08','2021-09','2021-10','2021-11','2021-12','2022-01','2022-02','2022-03']
+        }
+      ],
+      yAxis: [
+        {
+          type: 'value',
+          name: '数量',
+          axisLabel: {
+            formatter: function (a) {
+              a = +a;
+              return isFinite(a) ? echarts.format.addCommas(+a) : '';
+            }
+          }
+        }
+      ],
+      // dataZoom: [
+      //   {
+      //     show: true,
+      //     start: 0,
+      //     end: 50
+      //   },
+      //   {
+      //     type: 'inside',
+      //     start: 0,
+      //     end: 50
+      //   }
+      // ],
+      series: [
+        {
+          name: '成交数',
+          type: 'bar',
+          data:[]
+        },
+        {
+          name: '流拍数',
+          type: 'bar',
+          data: []
+        }
+      ]
+		};
+
+		// 使用刚指定的配置项和数据显示图表。
+		myChart.setOption(option);
+
+		//拿到本地的json文件数据
+    	function getJson(file,callback){
+    		let xhr = new XMLHttpRequest();
+    		xhr.onload=function (){
+    			return callback(this.responseText)
+    		}
+    		xhr.open("GET",file);
+    		xhr.send();
+    	}
+
+    	const cityFaPaiJson = ['2021-01','2021-02','2021-03','2021-04','2021-05','2021-06','2021-07','2021-08','2021-09','2021-10','2021-11','2021-12','2022-01','2022-02','2022-03'];
+    	let jsonData = [];
+
+
+    	cityFaPaiJson.forEach((item,index)=>{
+    		getJson(item+'.json',(responseText)=>{
+    			//存起来
+    			jsonData.push(JSON.parse(responseText));
+
+    			//第一次进来是北京市，展示数据
+    			if(index===cityFaPaiJson.length-1){
+			        changeSelectSetOptions(0);
+    			}
+    		})
+    	});
+
+    	const province = [{"id":1,"name":"北京"},{"id":2,"name":"上海"},{"id":3,"name":"天津"},{"id":4,"name":"重庆"},{"id":5,"name":"河北"},{"id":6,"name":"山西"},{"id":7,"name":"河南"},{"id":8,"name":"辽宁"},{"id":9,"name":"吉林"},{"id":10,"name":"黑龙江"},{"id":11,"name":"内蒙古"},{"id":12,"name":"江苏"},{"id":13,"name":"山东"},{"id":14,"name":"安徽"},{"id":15,"name":"浙江"},{"id":16,"name":"福建"},{"id":17,"name":"湖北"},{"id":18,"name":"湖南"},{"id":19,"name":"广东"},{"id":20,"name":"广西"},{"id":21,"name":"江西"},{"id":22,"name":"四川"},{"id":23,"name":"海南"},{"id":24,"name":"贵州"},{"id":25,"name":"云南"},{"id":26,"name":"西藏"},{"id":27,"name":"陕西"},{"id":28,"name":"甘肃"},{"id":29,"name":"青海"},{"id":30,"name":"宁夏"},{"id":31,"name":"新疆"}];
+    	const city = [{"id":1,"name":"北京"},{"id":2,"name":"上海"},{"id":3,"name":"天津"},{"id":4,"name":"重庆"},{'id': 5, 'name': '河北', 'city': [{'name': '石家庄市', 'id': 142}, {'name': '邯郸市', 'id': 148}, {'name': '邢台市', 'id': 164}, {'name': '保定市', 'id': 199}, {'name': '张家口市', 'id': 224}, {'name': '承德市', 'id': 239}, {'name': '秦皇岛市', 'id': 248}, {'name': '唐山市', 'id': 258}, {'name': '沧州市', 'id': 264}, {'name': '廊坊市', 'id': 274}, {'name': '衡水市', 'id': 275}]}, {'id': 6, 'name': '山西', 'city': [{'name': '太原市', 'id': 303}, {'name': '大同市', 'id': 309}, {'name': '阳泉市', 'id': 318}, {'name': '晋城市', 'id': 325}, {'name': '朔州市', 'id': 330}, {'name': '晋中市', 'id': 336}, {'name': '忻州市', 'id': 350}, {'name': '吕梁市', 'id': 368}, {'name': '临汾市', 'id': 379}, {'name': '运城市', 'id': 398}, {'name': '长治市', 'id': 3074}]}, {'id': 7, 'name': '河南', 'city': [{'name': '郑州市', 'id': 412}, {'name': '开封市', 'id': 420}, {'name': '洛阳市', 'id': 427}, {'name': '平顶山市', 'id': 438}, {'name': '焦作市', 'id': 446}, {'name': '鹤壁市', 'id': 454}, {'name': '新乡市', 'id': 458}, {'name': '安阳市', 'id': 468}, {'name': '濮阳市', 'id': 475}, {'name': '许昌市', 'id': 482}, {'name': '漯河市', 'id': 489}, {'name': '三门峡市', 'id': 495}, {'name': '南阳市', 'id': 502}, {'name': '商丘市', 'id': 517}, {'name': '周口市', 'id': 527}, {'name': '驻马店市', 'id': 538}, {'name': '信阳市', 'id': 549}, {'name': '济源市', 'id': 2780}]}, {'id': 8, 'name': '辽宁', 'city': [{'name': '沈阳市', 'id': 560}, {'name': '大连市', 'id': 573}, {'name': '鞍山市', 'id': 579}, {'name': '抚顺市', 'id': 584}, {'name': '本溪市', 'id': 589}, {'name': '丹东市', 'id': 593}, {'name': '锦州市', 'id': 598}, {'name': '葫芦岛市', 'id': 604}, {'name': '营口市', 'id': 609}, {'name': '盘锦市', 'id': 613}, {'name': '阜新市', 'id': 617}, {'name': '辽阳市', 'id': 621}, {'name': '朝阳市', 'id': 632}, {'name': '铁岭市', 'id': 6858}]}, {'id': 9, 'name': '吉林', 'city': [{'name': '长春市', 'id': 639}, {'name': '吉林市', 'id': 644}, {'name': '四平市', 'id': 651}, {'name': '通化市', 'id': 657}, {'name': '白山市', 'id': 664}, {'name': '松原市', 'id': 674}, {'name': '白城市', 'id': 681}, {'name': '延边朝鲜族自治州', 'id': 687}, {'name': '辽源市', 'id': 2992}]}, {'id': 10, 'name': '黑龙江', 'city': [{'name': '哈尔滨市', 'id': 698}, {'name': '齐齐哈尔市', 'id': 712}, {'name': '鹤岗市', 'id': 727}, {'name': '双鸭山市', 'id': 731}, {'name': '鸡西市', 'id': 737}, {'name': '大庆市', 'id': 742}, {'name': '伊春市', 'id': 753}, {'name': '牡丹江市', 'id': 757}, {'name': '佳木斯市', 'id': 765}, {'name': '七台河市', 'id': 773}, {'name': '黑河市', 'id': 776}, {'name': '绥化市', 'id': 782}, {'name': '大兴安岭地区', 'id': 793}]}, {'id': 11, 'name': '内蒙古', 'city': [{'name': '呼和浩特市', 'id': 799}, {'name': '包头市', 'id': 805}, {'name': '乌海市', 'id': 810}, {'name': '赤峰市', 'id': 812}, {'name': '乌兰察布市', 'id': 823}, {'name': '锡林郭勒盟', 'id': 835}, {'name': '呼伦贝尔市', 'id': 848}, {'name': '鄂尔多斯市', 'id': 870}, {'name': '巴彦淖尔市', 'id': 880}, {'name': '阿拉善盟', 'id': 891}, {'name': '兴安盟', 'id': 895}, {'name': '通辽市', 'id': 902}]}, {'id': 12, 'name': '江苏', 'city': [{'name': '南京市', 'id': 904}, {'name': '徐州市', 'id': 911}, {'name': '连云港市', 'id': 919}, {'name': '淮安市', 'id': 925}, {'name': '宿迁市', 'id': 933}, {'name': '盐城市', 'id': 939}, {'name': '扬州市', 'id': 951}, {'name': '泰州市', 'id': 959}, {'name': '南通市', 'id': 965}, {'name': '镇江市', 'id': 972}, {'name': '常州市', 'id': 978}, {'name': '无锡市', 'id': 984}, {'name': '苏州市', 'id': 988}]}, {'id': 13, 'name': '山东', 'city': [{'name': '济南市', 'id': 1000}, {'name': '青岛市', 'id': 1007}, {'name': '淄博市', 'id': 1016}, {'name': '枣庄市', 'id': 1022}, {'name': '东营市', 'id': 1025}, {'name': '潍坊市', 'id': 1032}, {'name': '烟台市', 'id': 1042}, {'name': '威海市', 'id': 1053}, {'name': '莱芜市', 'id': 1058}, {'name': '德州市', 'id': 1060}, {'name': '临沂市', 'id': 1072}, {'name': '聊城市', 'id': 1081}, {'name': '滨州市', 'id': 1090}, {'name': '菏泽市', 'id': 1099}, {'name': '日照市', 'id': 1108}, {'name': '泰安市', 'id': 1112}, {'name': '济宁市', 'id': 2900}]}, {'id': 14, 'name': '安徽', 'city': [{'name': '铜陵市', 'id': 1114}, {'name': '合肥市', 'id': 1116}, {'name': '淮南市', 'id': 1121}, {'name': '淮北市', 'id': 1124}, {'name': '芜湖市', 'id': 1127}, {'name': '蚌埠市', 'id': 1132}, {'name': '马鞍山市', 'id': 1137}, {'name': '安庆市', 'id': 1140}, {'name': '黄山市', 'id': 1151}, {'name': '滁州市', 'id': 1159}, {'name': '阜阳市', 'id': 1167}, {'name': '亳州市', 'id': 1174}, {'name': '宿州市', 'id': 1180}, {'name': '池州市', 'id': 1201}, {'name': '六安市', 'id': 1206}, {'name': '宣城市', 'id': 2971}]}, {'id': 15, 'name': '浙江', 'city': [{'name': '宁波市', 'id': 1158}, {'name': '杭州市', 'id': 1213}, {'name': '温州市', 'id': 1233}, {'name': '嘉兴市', 'id': 1243}, {'name': '湖州市', 'id': 1250}, {'name': '绍兴市', 'id': 1255}, {'name': '金华市', 'id': 1262}, {'name': '衢州市', 'id': 1273}, {'name': '丽水市', 'id': 1280}, {'name': '台州市', 'id': 1290}, {'name': '舟山市', 'id': 1298}]}, {'id': 16, 'name': '福建', 'city': [{'name': '福州市', 'id': 1303}, {'name': '厦门市', 'id': 1315}, {'name': '三明市', 'id': 1317}, {'name': '莆田市', 'id': 1329}, {'name': '泉州市', 'id': 1332}, {'name': '漳州市', 'id': 1341}, {'name': '南平市', 'id': 1352}, {'name': '龙岩市', 'id': 1362}, {'name': '宁德市', 'id': 1370}]}, {'id': 17, 'name': '湖北', 'city': [{'name': '武汉市', 'id': 1381}, {'name': '黄石市', 'id': 1387}, {'name': '襄阳市', 'id': 1396}, {'name': '十堰市', 'id': 1405}, {'name': '荆州市', 'id': 1413}, {'name': '宜昌市', 'id': 1421}, {'name': '孝感市', 'id': 1432}, {'name': '黄冈市', 'id': 1441}, {'name': '咸宁市', 'id': 1458}, {'name': '恩施州', 'id': 1466}, {'name': '鄂州市', 'id': 1475}, {'name': '荆门市', 'id': 1477}, {'name': '随州市', 'id': 1479}, {'name': '潜江市', 'id': 2922}, {'name': '天门市', 'id': 2980}, {'name': '仙桃市', 'id': 2983}, {'name': '神农架林区', 'id': 3154}]}, {'id': 18, 'name': '湖南', 'city': [{'name': '长沙市', 'id': 1482}, {'name': '株洲市', 'id': 1488}, {'name': '湘潭市', 'id': 1495}, {'name': '衡阳市', 'id': 1501}, {'name': '邵阳市', 'id': 1511}, {'name': '岳阳市', 'id': 1522}, {'name': '常德市', 'id': 1530}, {'name': '张家界市', 'id': 1540}, {'name': '郴州市', 'id': 1544}, {'name': '益阳市', 'id': 1555}, {'name': '永州市', 'id': 1560}, {'name': '怀化市', 'id': 1574}, {'name': '娄底市', 'id': 1586}, {'name': '湘西州', 'id': 1592}]}, {'id': 19, 'name': '广东', 'city': [{'name': '广州市', 'id': 1601}, {'name': '深圳市', 'id': 1607}, {'name': '珠海市', 'id': 1609}, {'name': '汕头市', 'id': 1611}, {'name': '韶关市', 'id': 1617}, {'name': '河源市', 'id': 1627}, {'name': '梅州市', 'id': 1634}, {'name': '惠州市', 'id': 1643}, {'name': '汕尾市', 'id': 1650}, {'name': '东莞市', 'id': 1655}, {'name': '中山市', 'id': 1657}, {'name': '江门市', 'id': 1659}, {'name': '佛山市', 'id': 1666}, {'name': '阳江市', 'id': 1672}, {'name': '湛江市', 'id': 1677}, {'name': '茂名市', 'id': 1684}, {'name': '肇庆市', 'id': 1690}, {'name': '云浮市', 'id': 1698}, {'name': '清远市', 'id': 1704}, {'name': '潮州市', 'id': 1705}, {'name': '揭阳市', 'id': 1709}]}, {'id': 20, 'name': '广西', 'city': [{'name': '南宁市', 'id': 1715}, {'name': '柳州市', 'id': 1720}, {'name': '桂林市', 'id': 1726}, {'name': '梧州市', 'id': 1740}, {'name': '北海市', 'id': 1746}, {'name': '防城港市', 'id': 1749}, {'name': '钦州市', 'id': 1753}, {'name': '贵港市', 'id': 1757}, {'name': '玉林市', 'id': 1761}, {'name': '贺州市', 'id': 1792}, {'name': '百色市', 'id': 1806}, {'name': '河池市', 'id': 1818}, {'name': '来宾市', 'id': 3044}, {'name': '崇左市', 'id': 3168}]}, {'id': 21, 'name': '江西', 'city': [{'name': '南昌市', 'id': 1827}, {'name': '景德镇市', 'id': 1832}, {'name': '萍乡市', 'id': 1836}, {'name': '新余市', 'id': 1842}, {'name': '九江市', 'id': 1845}, {'name': '鹰潭市', 'id': 1857}, {'name': '上饶市', 'id': 1861}, {'name': '宜春市', 'id': 1874}, {'name': '抚州市', 'id': 1885}, {'name': '吉安市', 'id': 1898}, {'name': '赣州市', 'id': 1911}]}, {'id': 22, 'name': '四川', 'city': [{'name': '成都市', 'id': 1930}, {'name': '自贡市', 'id': 1946}, {'name': '攀枝花市', 'id': 1950}, {'name': '泸州市', 'id': 1954}, {'name': '绵阳市', 'id': 1960}, {'name': '德阳市', 'id': 1962}, {'name': '广元市', 'id': 1977}, {'name': '遂宁市', 'id': 1983}, {'name': '内江市', 'id': 1988}, {'name': '乐山市', 'id': 1993}, {'name': '宜宾市', 'id': 2005}, {'name': '广安市', 'id': 2016}, {'name': '南充市', 'id': 2022}, {'name': '达州市', 'id': 2033}, {'name': '巴中市', 'id': 2042}, {'name': '雅安市', 'id': 2047}, {'name': '眉山市', 'id': 2058}, {'name': '资阳市', 'id': 2065}, {'name': '阿坝州', 'id': 2070}, {'name': '甘孜州', 'id': 2084}, {'name': '凉山州', 'id': 2103}]}, {'id': 23, 'name': '海南', 'city': [{'name': '海口市', 'id': 2121}, {'name': '儋州市', 'id': 3034}, {'name': '琼海市', 'id': 3115}, {'name': '万宁市', 'id': 3137}, {'name': '东方市', 'id': 3173}, {'name': '三亚市', 'id': 3690}, {'name': '文昌市', 'id': 3698}, {'name': '五指山市', 'id': 3699}, {'name': '临高县', 'id': 3701}, {'name': '澄迈县', 'id': 3702}, {'name': '定安县', 'id': 3703}, {'name': '屯昌县', 'id': 3704}, {'name': '昌江县', 'id': 3705}, {'name': '白沙县', 'id': 3706}, {'name': '琼中县', 'id': 3707}, {'name': '陵水县', 'id': 3708}, {'name': '保亭县', 'id': 3709}, {'name': '乐东县', 'id': 3710}, {'name': '三沙市', 'id': 3711}]}, {'id': 24, 'name': '贵州', 'city': [{'name': '贵阳市', 'id': 2144}, {'name': '六盘水市', 'id': 2150}, {'name': '遵义市', 'id': 2155}, {'name': '铜仁市', 'id': 2169}, {'name': '毕节市', 'id': 2180}, {'name': '安顺市', 'id': 2189}, {'name': '黔西南州', 'id': 2196}, {'name': '黔东南州', 'id': 2205}, {'name': '黔南州', 'id': 2222}]}, {'id': 25, 'name': '云南', 'city': [{'name': '昆明市', 'id': 2235}, {'name': '曲靖市', 'id': 2247}, {'name': '玉溪市', 'id': 2258}, {'name': '昭通市', 'id': 2270}, {'name': '普洱市', 'id': 2281}, {'name': '临沧市', 'id': 2291}, {'name': '保山市', 'id': 2298}, {'name': '丽江市', 'id': 2304}, {'name': '文山州', 'id': 2309}, {'name': '红河州', 'id': 2318}, {'name': '西双版纳州', 'id': 2332}, {'name': '楚雄州', 'id': 2336}, {'name': '大理州', 'id': 2347}, {'name': '德宏州', 'id': 2360}, {'name': '怒江州', 'id': 2366}, {'name': '迪庆州', 'id': 4108}]}, {'id': 26, 'name': '西藏', 'city': [{'name': '拉萨市', 'id': 2951}, {'name': '那曲地区', 'id': 3107}, {'name': '山南地区', 'id': 3129}, {'name': '昌都地区', 'id': 3138}, {'name': '日喀则地区', 'id': 3144}, {'name': '阿里地区', 'id': 3970}, {'name': '林芝市', 'id': 3971}]}, {'id': 27, 'name': '陕西', 'city': [{'name': '西安市', 'id': 2376}, {'name': '铜川市', 'id': 2386}, {'name': '宝鸡市', 'id': 2390}, {'name': '咸阳市', 'id': 2402}, {'name': '渭南市', 'id': 2416}, {'name': '延安市', 'id': 2428}, {'name': '汉中市', 'id': 2442}, {'name': '榆林市', 'id': 2454}, {'name': '商洛市', 'id': 2468}, {'name': '安康市', 'id': 2476}]}, {'id': 28, 'name': '甘肃', 'city': [{'name': '兰州市', 'id': 2487}, {'name': '金昌市', 'id': 2492}, {'name': '白银市', 'id': 2495}, {'name': '天水市', 'id': 2501}, {'name': '嘉峪关市', 'id': 2509}, {'name': '平凉市', 'id': 2518}, {'name': '庆阳市', 'id': 2525}, {'name': '陇南市', 'id': 2534}, {'name': '武威市', 'id': 2544}, {'name': '张掖市', 'id': 2549}, {'name': '酒泉市', 'id': 2556}, {'name': '甘南州', 'id': 2564}, {'name': '临夏州', 'id': 2573}, {'name': '定西市', 'id': 3080}]}, {'id': 29, 'name': '青海', 'city': [{'name': '西宁市', 'id': 2580}, {'name': '海东地区', 'id': 2585}, {'name': '海北州', 'id': 2592}, {'name': '黄南州', 'id': 2597}, {'name': '海南州', 'id': 2603}, {'name': '果洛州', 'id': 2605}, {'name': '玉树州', 'id': 2612}, {'name': '海西州', 'id': 2620}]}, {'id': 30, 'name': '宁夏', 'city': [{'name': '银川市', 'id': 2628}, {'name': '石嘴山市', 'id': 2632}, {'name': '吴忠市', 'id': 2637}, {'name': '固原市', 'id': 2644}, {'name': '中卫市', 'id': 3071}]}, {'id': 31, 'name': '新疆', 'city': [{'name': '乌鲁木齐市', 'id': 2652}, {'name': '克拉玛依市', 'id': 2654}, {'name': '石河子市', 'id': 2656}, {'name': '吐鲁番地区', 'id': 2658}, {'name': '哈密地区', 'id': 2662}, {'name': '和田地区', 'id': 2666}, {'name': '阿克苏地区', 'id': 2675}, {'name': '喀什地区', 'id': 2686}, {'name': '克孜勒苏柯尔克孜自治州', 'id': 2699}, {'name': '巴音郭楞州', 'id': 2704}, {'name': '昌吉州', 'id': 2714}, {'name': '博尔塔拉州', 'id': 2723}, {'name': '伊犁州', 'id': 2727}, {'name': '塔城地区', 'id': 2736}, {'name': '阿勒泰地区', 'id': 2744}, {'name': '五家渠市', 'id': 4110}, {'name': '阿拉尔市', 'id': 15945}, {'name': '图木舒克市', 'id': 15946}, {'name': '铁门关市', 'id': 53090}, {'name': '昆玉市', 'id': 53668}, {'name': '北屯市', 'id': 129142}, {'name': '可克达拉市', 'id': 145492}]}];
+        
+        for(let i =0;i<province.length;i++){
+        	let singleProvince = document.createElement("option");
+        	singleProvince.setAttribute('value',province[i].id);
+        	singleProvince.innerHTML = province[i].name;
+        	document.getElementById('province').appendChild(singleProvince);
+        }
+
+        function setCity(e){
+        	if(e){
+        		const index = parseInt(e);
+		        document.getElementById('city').innerHTML = '';
+        		if(city[index-1]['city'] instanceof Array && city[index-1]['city'].length>0){
+			        for(let i =0;i<city[index-1]['city'].length;i++){
+			        	let singleCity = document.createElement("option");
+			        	singleCity.setAttribute('value',city[index-1]['city'][i]['id']);
+			        	singleCity.innerHTML = city[index-1]['city'][i].name;
+			        	document.getElementById('city').appendChild(singleCity);
+			        }
+			        changeSelectSetOptions(index-1,0,city[index-1]['city'][0]['name']);
+        		}else{
+		        	let singleCity = document.createElement("option");
+		        	singleCity.setAttribute('value','');
+		        	singleCity.innerHTML = '全市';
+			        document.getElementById('city').appendChild(singleCity);
+			        //开始展示直辖市的图
+			        changeSelectSetOptions(index-1,-1,city[index-1]['name']);
+        		}
+        	}
+        }
+
+        function getPaimai(){
+        	//切换展示非直辖市的图
+        	const proviceIndex = document.getElementById('province').selectedIndex;
+        	const cityIndex = document.getElementById('city').selectedIndex;
+			changeSelectSetOptions(proviceIndex,cityIndex,city[proviceIndex]['city'][cityIndex]['name']);
+        }
+
+        function changeSelectSetOptions(proindex,cityindex=-1,name='北京'){
+			const copyoption = Object.assign({},option);
+			copyoption['series'][0]['data'] = jsonData.map(item=>{
+	          	return cityindex>-1?item[proindex]['city'][cityindex]['dealnum']:(item[proindex]['dealnum']||0);
+	          });
+			copyoption['series'][1]['data'] = jsonData.map(item=>{
+	          	return cityindex>-1?item[proindex]['city'][cityindex]['streamnum']:(item[proindex]['streamnum']||0);
+	          });
+			copyoption['title']['text'] = name+'法拍房数量变化展示图(只统计当月已结束)';
+			myChart.setOption({...copyoption});
+        }
+    </script>
+</body>
+</html>
