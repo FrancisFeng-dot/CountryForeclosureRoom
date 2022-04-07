@@ -109,14 +109,37 @@
     		xhr.send();
     	}
 
-    	const cityFaPaiJson = ['2021-01','2021-02','2021-03','2021-04','2021-05','2021-06','2021-07','2021-08','2021-09','2021-10','2021-11','2021-12','2022-01','2022-02','2022-03'];
+    	const cityFaPaiJson = ['2021-01','2021-02','2021-03','2021-04','2021-05','2021-06','2021-07','2021-08','2021-09','2021-10','2021-11','2021-12','2022-01','2022-02','2022-03','taobao2022-01','taobao2022-02','taobao2022-03'];
     	let jsonData = [];
 
 
     	cityFaPaiJson.forEach((item,index)=>{
     		getJson(item+'.json',(responseText)=>{
     			//存起来
-    			jsonData.push(JSON.parse(responseText));
+          if(item.indexOf('taobao')>-1){
+            const filtJsonName = item.replace('taobao','');
+            const jdJsonIndex = cityFaPaiJson.indexOf(filtJsonName);
+            const tabaoArr = JSON.parse(responseText);
+            //遍历京东某一个json文件的数据（省份）
+            jsonData[jdJsonIndex] = jsonData[jdJsonIndex].map(it=>{
+              //找到和淘宝对应省份名字的位置下标
+              const findOneByTB=tabaoArr.findIndex(i=>i['name']===it['name']);
+              if(it['city'] instanceof Array && it['city'].length>0){//省份
+                //遍历京东省份下面的市区
+                it['city'].forEach((jdcity,jdinx)=>{
+                  const fintCityInxByTB=tabaoArr[findOneByTB]['city'].findIndex(tbcity=>jdcity['name'].indexOf(tbcity['name'])>-1);
+                  it['city'][jdinx]['dealnum'] = tabaoArr[findOneByTB]['city'][fintCityInxByTB]['dealnum']||0;
+                  it['city'][jdinx]['streamnum'] = tabaoArr[findOneByTB]['city'][fintCityInxByTB]['streamnum']||0;
+                })
+              }else{//直辖市
+                it['dealnum'] = tabaoArr[findOneByTB]['city'][0]['dealnum']||0;
+                it['streamnum'] = tabaoArr[findOneByTB]['city'][0]['streamnum']||0;
+              }
+              return it;
+            });
+          }else{
+            jsonData.push(JSON.parse(responseText));
+          }
 
     			//第一次进来是北京市，展示数据
     			if(index===cityFaPaiJson.length-1){
@@ -162,19 +185,19 @@
         	//切换展示非直辖市的图
         	const proviceIndex = document.getElementById('province').selectedIndex;
         	const cityIndex = document.getElementById('city').selectedIndex;
-			changeSelectSetOptions(proviceIndex,cityIndex,city[proviceIndex]['city'][cityIndex]['name']);
+			     changeSelectSetOptions(proviceIndex,cityIndex,city[proviceIndex]['city'][cityIndex]['name']);
         }
 
         function changeSelectSetOptions(proindex,cityindex=-1,name='北京'){
-			const copyoption = Object.assign({},option);
-			copyoption['series'][0]['data'] = jsonData.map(item=>{
-	          	return cityindex>-1?item[proindex]['city'][cityindex]['dealnum']:(item[proindex]['dealnum']||0);
-	          });
-			copyoption['series'][1]['data'] = jsonData.map(item=>{
-	          	return cityindex>-1?item[proindex]['city'][cityindex]['streamnum']:(item[proindex]['streamnum']||0);
-	          });
-			copyoption['title']['text'] = name+'法拍房数量变化展示图(只统计当月已结束)';
-			myChart.setOption({...copyoption});
+          const copyoption = Object.assign({},option);
+          copyoption['series'][0]['data'] = jsonData.map(item=>{
+            return cityindex>-1?item[proindex]['city'][cityindex]['dealnum']:(item[proindex]['dealnum']||0);
+          });
+          copyoption['series'][1]['data'] = jsonData.map(item=>{
+            return cityindex>-1?item[proindex]['city'][cityindex]['streamnum']:(item[proindex]['streamnum']||0);
+          });
+          copyoption['title']['text'] = name+'法拍房数量变化展示图(只统计当月已结束)';
+          myChart.setOption({...copyoption});
         }
     </script>
 </body>
