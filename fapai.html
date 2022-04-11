@@ -109,7 +109,7 @@
     		xhr.send();
     	}
 
-    	const cityFaPaiJson = ['2021-01','2021-02','2021-03','2021-04','2021-05','2021-06','2021-07','2021-08','2021-09','2021-10','2021-11','2021-12','2022-01','2022-02','2022-03','taobao2022-01','taobao2022-02','taobao2022-03'];
+    	const cityFaPaiJson = ['2021-01','2021-02','2021-03','2021-04','2021-05','2021-06','2021-07','2021-08','2021-09','2021-10','2021-11','2021-12','2022-01','2022-02','2022-03','taobao2021-01','taobao2021-09','taobao2021-10','taobao2021-11','taobao2021-12','taobao2022-01','taobao2022-02','taobao2022-03'];
     	let jsonData = [];
 
 
@@ -126,6 +126,7 @@
               const findOneByTB=tabaoArr.findIndex(i=>i['name']===it['name']);
               if(it['city'] instanceof Array && it['city'].length>0){//省份
                 //遍历京东省份下面的市区
+                //console.log(tabaoArr[findOneByTB],item,findOneByTB,it)
                 it['city'].forEach((jdcity,jdinx)=>{
                   const fintCityInxByTB=tabaoArr[findOneByTB]['city'].findIndex(tbcity=>jdcity['name'].indexOf(tbcity['name'])>-1);
                   it['city'][jdinx]['dealnum'] = tabaoArr[findOneByTB]['city'][fintCityInxByTB]['dealnum']||0;
